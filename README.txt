@@ -4,4 +4,4 @@ how to run the program:
 3. Enter the password "luvmakima"
 4. type in the server IP and port (for this use ip = localhost and port = 9999)
 5. Enter your nickname, make sure it's unique
-6. Done, go and have fun chatting!
+6. Done, go and have fun chatting!!
