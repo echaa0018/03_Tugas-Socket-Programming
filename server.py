@@ -2,8 +2,10 @@ import socket
 import threading
 import queue
 
+# FUNCTION DECLARATION AND MORE
 messages = queue.Queue()
 clients = {}
+client_tags = []
 
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(("localhost", 9999))
@@ -22,31 +24,31 @@ def broadcast():
             message, addr = messages.get()
             decoded_message = message.decode()
             print(decoded_message)
-
+            
             if addr not in clients:
-                # If the message starts with SIGNUP_TAG, register the client
                 if decoded_message.startswith("SIGNUP_TAG:"):
                     name = decoded_message.split(":", 1)[1].strip()
-                    clients[addr] = name
-                    # Notify all clients that the user has joined
-                    for client in clients:
-                        server.sendto(f"{name} joined!".encode(), client)
+                    if name in client_tags: # check if name is already in the chatroom
+                        server.sendto("NAME_TAKEN".encode(), addr) # send to a message to the client that name is taken
+                    else: # if name is unique, register the name and add it to the clients list and array
+                        clients[addr] = name
+                        client_tags.append(name)
+                        for client in clients: # send the message to the client that someone has joined the chatroom
+                            server.sendto(f"{name} joined!".encode(), client)
             else:
-                # Check if the message is a quit message
-                if decoded_message.startswith("QUIT_TAG:"):
+                if decoded_message.startswith("QUIT_TAG:"): # when a client quits the chatroom
                     name = clients[addr]
-                    # Notify all clients that the user has left
-                    for client in clients:
+                    for client in clients: # send to the client that someone left the chatroom
                         server.sendto(f"{name} has left the chatroom.".encode(), client)
-                    del clients[addr]  # Remove the client from the list
-                else:
-                    # Regular message, broadcast to all clients
+                    del clients[addr] # removing the name from the array and tuples
+                    client_tags.remove(name)
+                else: # send the message to the client
                     for client in clients:
-                        if client != addr:  # Do not send the message back to the sender
+                        if client != addr:
                             server.sendto(message, client)
 
+# PROGRAM
 t1 = threading.Thread(target=receive)
 t2 = threading.Thread(target=broadcast)
-
 t1.start()
 t2.start()

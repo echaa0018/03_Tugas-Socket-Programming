@@ -2,56 +2,75 @@ import socket
 import threading
 import random
 import sys
-import time
+import os
 
+# FUNCTION AND OTHER DELCARATIONS
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 client.bind(("localhost", random.randint(8000, 9000)))
 
-correct_password = "luvmakima"
+correct_password = "luvmakima" # password to enter the chatroom Makima <3
 
-def authentication():
-    password = input("Password (1 attempt only): ")
+def authentication(): # checks is the user knows the password
+    password = input("Password (1 attempt): ")
     if password != correct_password:
-        print("Incorrect Password, Goodbye")
+        print("Incorrect Password, Goodbye.")
         sys.exit()
     else:
-        print("Correct Password, please wait")
-        time.sleep(1)
+        print("Correct Password, Please enter the necessary information to access the chatroom")
 
-authentication()
-
-name = input("Nickname: ")
-
-def get_server_details():
-    """Get server IP and port from the user."""
-    server_ip = input("Enter the server IP address: ")
-    server_port = int(input("Enter the server port: "))
+def get_server_details(): # get the server detail from the client
+    server_ip = input("IP address: ")
+    server_port = int(input("Server port: "))
     return server_ip, server_port
 
-server_ip, server_port = get_server_details()
+def sign_up(): # check if there are duplicate usernames or not
+    global name
+    while True:
+        name = input("Nickname: ")
+        client.sendto(f"SIGNUP_TAG: {name}".encode(), (server_ip, server_port))
+        message, _ = client.recvfrom(1024)
+        decoded_message = message.decode()
+        
+        if decoded_message == "NAME_TAKEN": # if name is already in the chatroom
+            print(f"\033[91mYou cannot have two {name}'s in the chatroom, please choose another name.\033[0m") 
+        else: # name is already unique
+            clear_terminal()
+            print(f"Welcome to the chatroom, {name}!!") 
+            print()
+            break
 
-def receive():
+def receive(): # continuously receive messages from the server
     while True:
         try:
             message, _ = client.recvfrom(1024)
-            print(message.decode())
+            print(f"\033[93m{message.decode()}\033[0m")
+            print()
         except Exception as e:
+            print("\033[91mPlease re-check your IP and port and run the program again.\033[0m")
             print(f"Receive error: {e}")
 
+def clear_terminal(): # clearing the terminal for a cleaner experience
+    if os.name == 'nt':
+        os.system('cls')  # for windows
+    else:
+        os.system('clear')  # for macOS or Linux
+
+# PROGRAM
+clear_terminal()
+authentication()
+server_ip, server_port = get_server_details()
+sign_up()
 t = threading.Thread(target=receive)
 t.start()
-
-client.sendto(f"SIGNUP_TAG: {name}".encode(), (server_ip, server_port))
-
-while True:
+while True: # Loop for receiving and sending messages
     message = input("")
-    if message == "!q":
-        # Send quit message to the server
+    print("\033[A\033[K", end="")
+    if message == "!q": # client quits the chatroom
         client.sendto(f"QUIT_TAG: {name}".encode(), (server_ip, server_port))
-        print("You have left the chatroom.")
-        break  # Exit the loop and terminate the client
-    else:
-        # Send the message to the server
+        print("\033[36mYou have left the chatroom.\033[0m")
+        print()
+        break  # exit the loop
+    else: # send message to the server and print it to the clients
         client.sendto(f"{name}: {message}".encode(), (server_ip, server_port))
-        # Display the message on the client's own terminal
-        print(f"{name}: {message}")
+        print(f"\033[36m{name}: {message}\033[0m")
+        print()
