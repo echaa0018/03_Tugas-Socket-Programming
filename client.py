@@ -65,7 +65,7 @@ def receive():  # continuously receive messages from the server
 # PROGRAM
 authentication()
 server_ip, server_port = get_server_details()
-client.bind(server_ip, server_port)
+client.bind((server_ip, server_port))
 sign_up()
 t = threading.Thread(target=receive)
 t.start()
