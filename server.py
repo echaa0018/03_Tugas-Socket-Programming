@@ -55,7 +55,6 @@ def broadcast():
         while not messages.empty():
             message, addr = messages.get()
             decoded_message = caesar_decrypt(message.decode(), shift)
-            print(f"Broadcasting message from {addr}: {decoded_message}")  # Debug print
             
             if addr not in clients:
                 if decoded_message.startswith("SIGNUP_TAG:"):
