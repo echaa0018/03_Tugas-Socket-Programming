@@ -45,6 +45,7 @@ def receive():
     while True:
         try:
             message, addr = server.recvfrom(1024)
+            print(f"Received message from {addr}: {message.decode()}")  # Debug print
             messages.put((message, addr))
         except Exception as e:
             print(f"Receive error: {e}")
@@ -53,13 +54,13 @@ def broadcast():
     while True:
         while not messages.empty():
             message, addr = messages.get()
-            decoded_message = message.decode()
-            print(decoded_message)
+            decoded_message = caesar_decrypt(message.decode(), shift)
+            print(f"Broadcasting message from {addr}: {decoded_message}")  # Debug print
             
             if addr not in clients:
                 if decoded_message.startswith("SIGNUP_TAG:"):
                     name = decoded_message.split(":", 1)[1].strip()
-                    if name in client_tags: # check if name is already in the chatroom
+                    if name in client_tags:  # check if name is already in the chatroom
                         encrypted_response = caesar_encrypt("NAME_TAKEN", shift)
                         server.sendto(encrypted_response.encode(), addr)
                     else:
@@ -71,15 +72,15 @@ def broadcast():
                             server.sendto(caesar_encrypt(join_message, shift).encode(), client)
                         save_message(f"{name} joined!")
             else:
-                if decoded_message.startswith("QUIT_TAG:"): # when a client quits the chatroom
+                if decoded_message.startswith("QUIT_TAG:"):  # when a client quits the chatroom
                     name = clients[addr]
-                    for client in clients: # send to the client that someone left the chatroom
+                    for client in clients:  # notify clients that someone left the chatroom
                         leave_message = f"{name} has left the chatroom."
                         server.sendto(caesar_encrypt(leave_message, shift).encode(), client)
                     del clients[addr]
                     client_tags.remove(name)
                     save_message(f"{name} has left the chatroom.")
-                else: # send the message to the client
+                else:  # send the message to clients
                     for client in clients:
                         if client != addr:
                             server.sendto(caesar_encrypt(decoded_message, shift).encode(), client)
