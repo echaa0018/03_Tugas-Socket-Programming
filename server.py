@@ -9,7 +9,7 @@ clients = {}
 client_tags = []
 
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server.bind(("192.168.56.1", 9999))
+server.bind(("localhost", 9999))
 
 HISTORY_FILE = "chat_history.txt"
 shift = 3  # Shift for Caesar cipher

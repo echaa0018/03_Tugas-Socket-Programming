@@ -5,6 +5,7 @@ import sys
 
 # FUNCTION AND OTHER DECLARATIONS
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+client.bind(("", 9999))
 
 correct_password = "luvmakima"  # password to enter the chatroom
 shift = 3  # Shifting for Caesar cipher
@@ -65,7 +66,6 @@ def receive():  # continuously receive messages from the server
 # PROGRAM
 authentication()
 server_ip, server_port = get_server_details()
-client.bind((server_ip, server_port))
 sign_up()
 t = threading.Thread(target=receive)
 t.start()
