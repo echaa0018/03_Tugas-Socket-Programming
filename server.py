@@ -1,6 +1,7 @@
 import socket
 import threading
 import queue
+import os
 
 # FUNCTION DECLARATION AND MORE
 messages = queue.Queue()
@@ -9,6 +10,20 @@ client_tags = []
 
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(("localhost", 9999))
+
+HISTORY_FILE = "chat_history.txt"
+
+# Fungsi untuk memuat riwayat pesan dari file
+def load_history(addr):
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r") as f:
+            for line in f:
+                server.sendto(line.encode(), addr)
+
+# Fungsi untuk menyimpan pesan ke file
+def save_message(message):
+    with open(HISTORY_FILE, "a") as f:
+        f.write(message + "\n")
 
 def receive():
     while True:
