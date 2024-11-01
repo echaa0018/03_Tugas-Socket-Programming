@@ -5,7 +5,7 @@ import sys
 
 # FUNCTION AND OTHER DECLARATIONS
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-client.bind(("", 9999))
+client.bind(("192.168.56.1", random.randint(8000, 9000)))
 
 correct_password = "luvmakima"  # password to enter the chatroom
 shift = 3  # Shifting for Caesar cipher
