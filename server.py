@@ -12,15 +12,31 @@ server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(("localhost", 9999))
 
 HISTORY_FILE = "chat_history.txt"
+shift = 3  # Shift for Caesar cipher
+
+def caesar_encrypt(message, shift):
+    encrypted_message = ""
+    for char in message:
+        if char.isalpha():
+            shift_base = ord('a') if char.islower() else ord('A')
+            encrypted_message += chr((ord(char) - shift_base + shift) % 26 + shift_base)
+        else:
+            encrypted_message += char
+    return encrypted_message
+
+def caesar_decrypt(message, shift):
+    return caesar_encrypt(message, -shift)
 
 # Fungsi untuk memuat riwayat pesan dari file
 def load_history(addr):
-    if os.path.exists(HISTORY_FILE):
+    try:
         with open(HISTORY_FILE, "r") as f:
             for line in f:
-                server.sendto(line.encode(), addr)
+                encrypted_line = caesar_encrypt(line.strip(), shift)
+                server.sendto(encrypted_line.encode(), addr)
+    except FileNotFoundError:
+        pass  # Skip if no history file exists yet
 
-# Fungsi untuk menyimpan pesan ke file
 def save_message(message):
     with open(HISTORY_FILE, "a") as f:
         f.write(message + "\n")
@@ -44,23 +60,30 @@ def broadcast():
                 if decoded_message.startswith("SIGNUP_TAG:"):
                     name = decoded_message.split(":", 1)[1].strip()
                     if name in client_tags: # check if name is already in the chatroom
-                        server.sendto("NAME_TAKEN".encode(), addr) # send to a message to the client that name is taken
-                    else: # if name is unique, register the name and add it to the clients list and array
+                        encrypted_response = caesar_encrypt("NAME_TAKEN", shift)
+                        server.sendto(encrypted_response.encode(), addr)
+                    else:
                         clients[addr] = name
                         client_tags.append(name)
-                        for client in clients: # send the message to the client that someone has joined the chatroom
-                            server.sendto(f"{name} joined!".encode(), client)
+                        load_history(addr)
+                        for client in clients:
+                            join_message = f"{name} joined!"
+                            server.sendto(caesar_encrypt(join_message, shift).encode(), client)
+                        save_message(f"{name} joined!")
             else:
                 if decoded_message.startswith("QUIT_TAG:"): # when a client quits the chatroom
                     name = clients[addr]
                     for client in clients: # send to the client that someone left the chatroom
-                        server.sendto(f"{name} has left the chatroom.".encode(), client)
-                    del clients[addr] # removing the name from the array and tuples
+                        leave_message = f"{name} has left the chatroom."
+                        server.sendto(caesar_encrypt(leave_message, shift).encode(), client)
+                    del clients[addr]
                     client_tags.remove(name)
+                    save_message(f"{name} has left the chatroom.")
                 else: # send the message to the client
                     for client in clients:
                         if client != addr:
-                            server.sendto(message, client)
+                            server.sendto(caesar_encrypt(decoded_message, shift).encode(), client)
+                    save_message(decoded_message)
 
 # PROGRAM
 t1 = threading.Thread(target=receive)
